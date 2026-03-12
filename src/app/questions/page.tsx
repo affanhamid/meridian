@@ -1,32 +1,85 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { questions } from "@/lib/data";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Check, X, ArrowRight, RotateCcw, Clock } from "lucide-react";
 
-const optionLetters = ["A", "B", "C", "D", "E"];
+const letters = ["A", "B", "C", "D", "E"];
 
 export default function QuestionsPage() {
+  const allQuestions = useQuery(api.questions.getAllQuestions);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [answers, setAnswers] = useState<number[]>([]);
   const [isComplete, setIsComplete] = useState(false);
-  const [startTime, setStartTime] = useState(Date.now());
+  const [startTime] = useState(Date.now());
 
-  const question = questions[currentQuestion];
-  const progressValue = ((currentQuestion + 1) / questions.length) * 100;
-
-  function handleSelectAnswer(index: number) {
-    if (!isSubmitted) {
-      setSelectedAnswer(index);
-    }
+  // Loading state
+  if (allQuestions === undefined) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <main className="flex-1 px-6 py-10">
+          <div className="mx-auto max-w-2xl">
+            <div className="animate-pulse">
+              <div className="mb-10">
+                <div className="mb-2 flex justify-between">
+                  <div className="h-4 w-24 rounded bg-[#F5F5F0]" />
+                  <div className="h-4 w-8 rounded bg-[#F5F5F0]" />
+                </div>
+                <div className="h-1 rounded-full bg-[#E8E8E3]" />
+              </div>
+              <div className="space-y-3">
+                <div className="h-4 w-full rounded bg-[#F5F5F0]" />
+                <div className="h-4 w-5/6 rounded bg-[#F5F5F0]" />
+                <div className="h-4 w-4/5 rounded bg-[#F5F5F0]" />
+              </div>
+              <div className="mt-8 space-y-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-14 rounded-xl bg-[#F5F5F0]" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
+
+  // No questions
+  if (allQuestions.length === 0) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <main className="flex flex-1 items-center justify-center px-6">
+          <div className="text-center">
+            <h1 className="font-display text-3xl text-[#1A1A1A]">
+              No questions yet
+            </h1>
+            <p className="mt-2 text-sm text-[#737373]">
+              Questions are being added. Check back soon.
+            </p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const questions = allQuestions;
+  const question = questions[currentQuestion];
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+  // Strip "A: ", "B: " etc. prefixes from options for display
+  const displayOptions = question.options.map((opt) =>
+    opt.replace(/^[A-E]:\s*/, "")
+  );
 
   function handleSubmit() {
     if (selectedAnswer === null) return;
@@ -50,96 +103,67 @@ export default function QuestionsPage() {
     setIsSubmitted(false);
     setAnswers([]);
     setIsComplete(false);
-    setStartTime(Date.now());
-  }
-
-  function getOptionClasses(index: number) {
-    const base =
-      "flex items-start gap-4 rounded-lg border p-4 transition-all cursor-pointer";
-
-    if (!isSubmitted) {
-      if (selectedAnswer === index) {
-        return `${base} border-[#2563EB] bg-[#2563EB]/10`;
-      }
-      return `${base} bg-[#1E293B] border-border hover:border-[#2563EB]/50`;
-    }
-
-    // After submission
-    if (index === question.correctAnswer) {
-      return `${base} border-green-500 bg-green-500/10 cursor-default`;
-    }
-    if (index === selectedAnswer && selectedAnswer !== question.correctAnswer) {
-      return `${base} border-red-500 bg-red-500/10 cursor-default`;
-    }
-    return `${base} bg-[#1E293B] border-border opacity-50 cursor-default`;
   }
 
   if (isComplete) {
     const score = answers.filter(
-      (ans, i) => ans === questions[i].correctAnswer
+      (ans, i) => ans === questions[i].correctIndex
     ).length;
     const total = questions.length;
-    const percentage = Math.round((score / total) * 100);
+    const pct = Math.round((score / total) * 100);
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const minutes = Math.floor(elapsed / 60);
-    const seconds = elapsed % 60;
-
-    let performanceMessage: string;
-    if (score === total) {
-      performanceMessage =
-        "Excellent! You have a strong command of these topics.";
-    } else if (score >= 2) {
-      performanceMessage =
-        "Good effort! Review the topics you missed to strengthen your knowledge.";
-    } else {
-      performanceMessage =
-        "Keep studying! Revisit the topic pages to build a stronger foundation.";
-    }
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
 
     return (
-      <div className="flex min-h-screen flex-col bg-[#0F172A]">
+      <div className="flex min-h-screen flex-col">
         <Navbar />
-        <main className="flex flex-1 items-center justify-center px-4 py-16">
-          <Card className="w-full max-w-lg border-border bg-[#1E293B] text-center">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-white">
-                Quiz Complete!
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <p className="text-lg text-slate-300">
-                You scored{" "}
-                <span className="font-semibold text-white">{score}</span> out of{" "}
-                <span className="font-semibold text-white">{total}</span>
-              </p>
+        <main className="flex flex-1 items-center justify-center px-6 py-16">
+          <div className="w-full max-w-md text-center">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#F5F5F0]">
+              <span className="font-display text-3xl text-[#1A1A1A]">
+                {pct}%
+              </span>
+            </div>
 
-              <p className="text-5xl font-bold text-[#2563EB]">
-                {percentage}%
-              </p>
+            <h1 className="font-display text-3xl text-[#1A1A1A]">
+              Quiz Complete
+            </h1>
+            <p className="mt-2 text-sm text-[#737373]">
+              You scored{" "}
+              <span className="font-semibold text-[#1A1A1A]">{score}</span> out
+              of <span className="font-semibold text-[#1A1A1A]">{total}</span>
+            </p>
 
-              <p className="text-sm text-slate-400">
-                Time taken:{" "}
-                <span className="text-white">
-                  {minutes} {minutes === 1 ? "minute" : "minutes"} and {seconds}{" "}
-                  {seconds === 1 ? "second" : "seconds"}
-                </span>
-              </p>
+            <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-[#A3A3A3]">
+              <Clock className="h-3 w-3" />
+              {mins}m {secs}s
+            </div>
 
-              <p className="text-slate-300">{performanceMessage}</p>
+            <p className="mt-6 text-[14px] text-[#737373]">
+              {score === total
+                ? "Excellent. You have a strong command of these topics."
+                : score >= 2
+                  ? "Good effort. Review the topics you missed."
+                  : "Keep studying. Revisit the topics to build your foundation."}
+            </p>
 
-              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-center">
-                <Link href="/topics" className={buttonVariants({ variant: "outline" })}>
-                  Review Topics
-                </Link>
-                <Button
-                  onClick={handleReset}
-                  className="bg-[#2563EB] text-white hover:bg-[#2563EB]/90"
-                >
-                  Try Again
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/topics"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-medium text-[#1A1A1A] transition-colors hover:bg-[#F5F5F0]"
+              >
+                Review Topics
+              </Link>
+              <button
+                onClick={handleReset}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#333]"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Try Again
+              </button>
+            </div>
+          </div>
         </main>
         <Footer />
       </div>
@@ -147,81 +171,129 @@ export default function QuestionsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0F172A]">
+    <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="flex-1 px-4 py-12">
-        <div className="mx-auto max-w-3xl space-y-8">
+
+      <main className="flex-1 px-6 py-10">
+        <div className="mx-auto max-w-2xl">
           {/* Progress */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm text-slate-400">
+          <div className="mb-10">
+            <div className="mb-2 flex items-center justify-between text-[13px] text-[#A3A3A3]">
               <span>
                 Question {currentQuestion + 1} of {questions.length}
               </span>
-              <span>{Math.round(progressValue)}%</span>
+              <span>{Math.round(progress)}%</span>
             </div>
-            <Progress value={progressValue} className="h-2" />
+            <div className="h-1 overflow-hidden rounded-full bg-[#E8E8E3]">
+              <div
+                className="h-full rounded-full bg-[#1A1A1A] transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
 
-          {/* Question Card */}
-          <Card className="border-border bg-[#1E293B]">
-            <CardHeader>
-              <CardTitle className="text-lg font-medium leading-relaxed text-white">
-                {question.stem}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {question.options.map((option, index) => (
-                <div
-                  key={index}
-                  className={getOptionClasses(index)}
-                  onClick={() => handleSelectAnswer(index)}
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#0F172A] text-sm font-semibold text-[#2563EB]">
-                    {optionLetters[index]}
-                  </span>
-                  <span className="pt-1 text-slate-200">{option}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {/* Question */}
+          <div className="mb-8">
+            <p className="text-[15px] leading-[1.8] text-[#404040]">
+              {question.stem}
+            </p>
+          </div>
 
-          {/* Submit / Next Button */}
+          {/* Options */}
+          <div className="mb-8 flex flex-col gap-2">
+            {displayOptions.map((option, index) => {
+              let classes =
+                "flex items-start gap-3 rounded-xl border px-4 py-3.5 transition-all cursor-pointer";
+
+              if (!isSubmitted) {
+                classes +=
+                  selectedAnswer === index
+                    ? " border-[#1A1A1A] bg-[#F5F5F0]"
+                    : " border-border bg-white hover:border-[#C4C4C4]";
+              } else if (index === question.correctIndex) {
+                classes += " border-emerald-200 bg-emerald-50";
+              } else if (
+                index === selectedAnswer &&
+                selectedAnswer !== question.correctIndex
+              ) {
+                classes += " border-red-200 bg-red-50";
+              } else {
+                classes += " border-border bg-white opacity-50";
+              }
+
+              return (
+                <button
+                  key={index}
+                  className={classes}
+                  onClick={() => !isSubmitted && setSelectedAnswer(index)}
+                  disabled={isSubmitted}
+                >
+                  <span
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[12px] font-semibold ${
+                      isSubmitted && index === question.correctIndex
+                        ? "bg-emerald-100 text-emerald-700"
+                        : isSubmitted &&
+                            index === selectedAnswer &&
+                            selectedAnswer !== question.correctIndex
+                          ? "bg-red-100 text-red-700"
+                          : selectedAnswer === index && !isSubmitted
+                            ? "bg-[#1A1A1A] text-white"
+                            : "bg-[#F5F5F0] text-[#737373]"
+                    }`}
+                  >
+                    {isSubmitted && index === question.correctIndex ? (
+                      <Check className="h-3 w-3" />
+                    ) : isSubmitted &&
+                      index === selectedAnswer &&
+                      selectedAnswer !== question.correctIndex ? (
+                      <X className="h-3 w-3" />
+                    ) : (
+                      letters[index]
+                    )}
+                  </span>
+                  <span className="text-left text-[14px] text-[#404040]">
+                    {option}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Actions */}
           {!isSubmitted ? (
-            <Button
+            <button
               onClick={handleSubmit}
               disabled={selectedAnswer === null}
-              className="w-full bg-[#2563EB] text-white hover:bg-[#2563EB]/90 disabled:opacity-50"
+              className="w-full rounded-xl bg-[#1A1A1A] py-3 text-sm font-medium text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-30"
             >
               Submit Answer
-            </Button>
+            </button>
           ) : (
             <>
               {/* Explanation */}
-              <Card className="border-border bg-[#1E293B]">
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold text-white">
-                    Explanation
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="leading-relaxed text-slate-300">
-                    {question.explanation}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="mb-6 rounded-xl border border-border bg-[#F5F5F0] p-5">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#A3A3A3]">
+                  Explanation
+                </p>
+                <p className="text-[14px] leading-relaxed text-[#404040]">
+                  {question.explanation}
+                </p>
+              </div>
 
-              <Button
+              <button
                 onClick={handleNext}
-                className="w-full bg-[#2563EB] text-white hover:bg-[#2563EB]/90"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A1A1A] py-3 text-sm font-medium text-white transition-colors hover:bg-[#333]"
               >
                 {currentQuestion + 1 >= questions.length
                   ? "See Results"
                   : "Next Question"}
-              </Button>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
             </>
           )}
         </div>
       </main>
+
       <Footer />
     </div>
   );

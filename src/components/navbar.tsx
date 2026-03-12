@@ -2,103 +2,97 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-[#0F172A]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0F172A]/80">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-50 border-b border-border bg-[#FAFAF8]/90 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <svg
-            className="h-7 w-7 text-[#2563EB]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2L12 22" />
-            <path d="M2 12L22 12" />
-            <path d="M12 2C15 6 15 18 12 22" />
-            <path d="M12 2C9 6 9 18 12 22" />
-          </svg>
-          <span className="text-xl font-bold text-white">Meridian</span>
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#1A1A1A]">
+            <span className="text-xs font-bold text-white">M</span>
+          </div>
+          <span className="text-[15px] font-semibold tracking-tight text-[#1A1A1A]">
+            Meridian
+          </span>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-6 md:flex">
+        <div className="hidden items-center gap-8 md:flex">
           <Link
             href="/topics"
-            className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            className="text-[13px] text-[#737373] transition-colors hover:text-[#1A1A1A]"
           >
             Topics
           </Link>
           <Link
             href="/questions"
-            className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            className="text-[13px] text-[#737373] transition-colors hover:text-[#1A1A1A]"
           >
             Questions
           </Link>
           <Link
             href="/dashboard"
-            className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            className="text-[13px] text-[#737373] transition-colors hover:text-[#1A1A1A]"
           >
             Dashboard
           </Link>
-          <Button variant="secondary" size="sm">
+          <Link
+            href="#"
+            className="rounded-full border border-[#1A1A1A] px-4 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+          >
             Sign in
-          </Button>
+          </Link>
         </div>
 
-        {/* Mobile hamburger */}
+        {/* Mobile toggle */}
         <button
-          className="flex flex-col gap-1.5 md:hidden"
+          className="md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
         >
-          <span
-            className={`h-0.5 w-6 bg-white transition-transform ${mobileOpen ? "translate-y-2 rotate-45" : ""}`}
-          />
-          <span
-            className={`h-0.5 w-6 bg-white transition-opacity ${mobileOpen ? "opacity-0" : ""}`}
-          />
-          <span
-            className={`h-0.5 w-6 bg-white transition-transform ${mobileOpen ? "-translate-y-2 -rotate-45" : ""}`}
-          />
+          {mobileOpen ? (
+            <X className="h-5 w-5 text-[#1A1A1A]" />
+          ) : (
+            <Menu className="h-5 w-5 text-[#1A1A1A]" />
+          )}
         </button>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="border-t border-border px-4 pb-4 pt-2 md:hidden">
-          <div className="flex flex-col gap-3">
+        <div className="border-t border-border px-6 pb-6 pt-4 md:hidden">
+          <div className="flex flex-col gap-4">
             <Link
               href="/topics"
-              className="text-sm font-medium text-slate-300 hover:text-white"
+              className="text-sm text-[#737373] hover:text-[#1A1A1A]"
               onClick={() => setMobileOpen(false)}
             >
               Topics
             </Link>
             <Link
               href="/questions"
-              className="text-sm font-medium text-slate-300 hover:text-white"
+              className="text-sm text-[#737373] hover:text-[#1A1A1A]"
               onClick={() => setMobileOpen(false)}
             >
               Questions
             </Link>
             <Link
               href="/dashboard"
-              className="text-sm font-medium text-slate-300 hover:text-white"
+              className="text-sm text-[#737373] hover:text-[#1A1A1A]"
               onClick={() => setMobileOpen(false)}
             >
               Dashboard
             </Link>
-            <Button variant="secondary" size="sm" className="w-fit">
+            <Link
+              href="#"
+              className="w-fit rounded-full border border-[#1A1A1A] px-4 py-1.5 text-sm font-medium text-[#1A1A1A]"
+              onClick={() => setMobileOpen(false)}
+            >
               Sign in
-            </Button>
+            </Link>
           </div>
         </div>
       )}
